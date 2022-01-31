@@ -1,0 +1,221 @@
+basePath: /
+definitions:
+  api.Response:
+    properties:
+      message:
+        type: string
+        x-order: "0"
+    type: object
+  api.ServerResponse:
+    properties:
+      name:
+        type: string
+        x-order: "0"
+      swagger:
+        type: string
+        x-order: "2"
+      version:
+        type: string
+        x-order: "1"
+    type: object
+  models.Order:
+    properties:
+      amount:
+        type: number
+        x-order: "2"
+      id:
+        type: string
+        x-order: "0"
+      items:
+        items:
+          $ref: '#/definitions/models.OrderProduct'
+        type: array
+        x-order: "4"
+      status:
+        type: string
+        x-order: "1"
+      timestamp:
+        type: string
+        x-order: "3"
+    type: object
+  models.OrderProduct:
+    properties:
+      name:
+        type: string
+        x-order: "0"
+      quantity:
+        type: integer
+        x-order: "1"
+    type: object
+  models.UserRequest:
+    properties:
+      id:
+        type: string
+        x-order: "0"
+      path:
+        type: string
+        x-order: "3"
+      timestamp:
+        type: string
+        x-order: "4"
+      type:
+        type: string
+        x-order: "2"
+      user_id:
+        type: string
+        x-order: "1"
+    type: object
+host: localhost:80
+info:
+  contact: {}
+  description: |-
+    This API is entrypoint for user requests.
+    User has option to order some products and list created orders.
+    Also, user is able to list his requests to this API.
+  title: Registry
+  version: "1.0"
+paths:
+  /:
+    get:
+      consumes:
+      - application/json
+      description: Returns name, version and link to the swagger.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.ServerResponse'
+      summary: Welcome message from microservice.
+      tags:
+      - general
+  /order:
+    post:
+      consumes:
+      - application/json
+      description: Processing user order request. When `uid` param missed - creates
+        new user and wallet as well.
+      parameters:
+      - description: User ID
+        in: body
+        name: uid
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Order'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Creates new order.
+      tags:
+      - orders
+  /orders:
+    get:
+      consumes:
+      - application/json
+      description: Find and return created orders of the user using paging.
+      parameters:
+      - description: User ID
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: string
+      - description: Page size
+        in: query
+        name: size
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Order'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Returns list of created orders for user.
+      tags:
+      - orders
+  /requests:
+    get:
+      consumes:
+      - application/json
+      description: Find and return created requests of the users using paging.
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: string
+      - description: Page size
+        in: query
+        name: size
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.UserRequest'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Returns list of created requests for users.
+      tags:
+      - requests
+  /requests/{uid}:
+    get:
+      consumes:
+      - application/json
+      description: Find and return created requests of the user using paging.
+      parameters:
+      - description: User ID
+        in: path
+        name: uid
+        required: true
+        type: string
+      - description: Page number
+        in: query
+        name: page
+        type: string
+      - description: Page size
+        in: query
+        name: size
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.UserRequest'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Returns list of created requests for user.
+      tags:
+      - requests
+swagger: "2.0"
+x-extension-openapi:
+  example: value on a json format

@@ -1,0 +1,116 @@
+version: "3"
+
+services:
+  registry:
+    build: ./registry
+    container_name: registry
+    environment:
+      - HOST=localhost
+      - PORT=80
+    hostname: registry
+    domainname: registry
+    ports:
+      - "80:80"
+    depends_on:
+      - mongodb-primary
+      - kafka
+
+  wallet:
+    build: ./wallet
+    container_name: wallet
+    depends_on:
+      - mongodb-primary
+      - kafka
+
+  storage:
+    build: ./storage
+    container_name: storage
+    environment:
+      - ENV=Production
+    depends_on:
+      - mongodb-primary
+      - kafka
+
+  mongodb:
+    image: mongo:5.0.3-focal
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=password
+    volumes:
+      - mongodb_data:/data/mongodb
+    ports:
+      - "27017:27017"
+    restart: always
+
+  mongodb-primary:
+    image: docker.io/bitnami/mongodb:5.0.5
+    environment:
+      - MONGODB_ADVERTISED_HOSTNAME=mongodb-primary
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_ROOT_USER=root
+      - MONGODB_ROOT_PASSWORD=password
+      - MONGODB_REPLICA_SET_KEY=replicasetkey
+    volumes:
+      - mongodb_data:/bitnami/mongodb'
+    ports:
+      - "27017:27017"
+    restart: always
+
+  mongodb-secondary:
+    image: docker.io/bitnami/mongodb:5.0.5
+    environment:
+      - MONGODB_ADVERTISED_HOSTNAME=mongodb-secondary
+      - MONGODB_REPLICA_SET_MODE=secondary
+      - MONGODB_INITIAL_PRIMARY_HOST=mongodb-primary
+      - MONGODB_INITIAL_PRIMARY_ROOT_USER=root
+      - MONGODB_INITIAL_PRIMARY_ROOT_PASSWORD=password
+      - MONGODB_REPLICA_SET_KEY=replicasetkey
+    depends_on:
+      - mongodb-primary
+
+  mongodb-arbiter:
+    image: docker.io/bitnami/mongodb:5.0.5
+    environment:
+      - MONGODB_ADVERTISED_HOSTNAME=mongodb-arbiter
+      - MONGODB_REPLICA_SET_MODE=arbiter
+      - MONGODB_INITIAL_PRIMARY_HOST=mongodb-primary
+      - MONGODB_INITIAL_PRIMARY_ROOT_USER=root
+      - MONGODB_INITIAL_PRIMARY_ROOT_PASSWORD=password
+      - MONGODB_REPLICA_SET_KEY=replicasetkey
+    depends_on:
+      - mongodb-primary
+
+  kafka:
+    image: docker.io/bitnami/kafka:latest
+    container_name: kafka
+    ports:
+      - "9092:9092"
+      - "9093:9093"
+    volumes:
+      - "kafka_data:/bitnami"
+    environment:
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CLIENT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      - KAFKA_CFG_LISTENERS=CLIENT://:9092,EXTERNAL://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=CLIENT://kafka:9092,EXTERNAL://kafka:9093
+      - KAFKA_INTER_BROKER_LISTENER_NAME=CLIENT
+    depends_on:
+      - zookeeper
+
+  zookeeper:
+    image: docker.io/bitnami/zookeeper:latest
+    ports:
+      - "2181:2181"
+    volumes:
+      - "zookeeper_data:/bitnami"
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+
+volumes:
+  mongodb_data:
+    driver: local
+  kafka_data:
+    driver: local
+  zookeeper_data:
+    driver: local

@@ -3,9 +3,9 @@ package consumers
 import (
 	"context"
 	"eCommerce/storage/internal/core"
-	"eCommerce/storage/internal/requests"
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
+	"io"
 	"log"
 )
 
@@ -25,15 +25,15 @@ type StorageConsumer struct {
 	cancelReader  *kafka.Reader
 }
 
-func NewStorageConsumer(ctx context.Context, log *zap.SugaredLogger, cfg *ConsumerConfig, storage core.StorageService) *StorageConsumer {
+func NewStorageConsumer(ctx context.Context, log *zap.SugaredLogger, kafkaAddr string, storage core.StorageService) *StorageConsumer {
 	consumer := new(StorageConsumer)
 
 	consumer.ctx = ctx
 	consumer.log = log
 	consumer.storage = storage
 
-	consumer.reserveReader = kafka.NewReader(cfg.ToReaderConfig(ReserveOrderTopic, ReserveOrderGroup))
-	consumer.cancelReader = kafka.NewReader(cfg.ToReaderConfig(CancelOrderTopic, CancelOrderGroup))
+	consumer.reserveReader = kafka.NewReader(ReaderConfig(kafkaAddr, ReserveOrderTopic, ReserveOrderGroup))
+	consumer.cancelReader = kafka.NewReader(ReaderConfig(kafkaAddr, CancelOrderTopic, CancelOrderGroup))
 
 	return consumer
 }
@@ -51,22 +51,6 @@ func (c *StorageConsumer) ReserveOrder(message kafka.Message) error {
 	}
 
 	return nil
-
-	//err := c.SaveRequest(request)
-	//if err != nil {
-	//
-	//}
-	//
-	//msg := kafka.Message{
-	//	Key:   nil,
-	//	Value: nil,
-	//	Topic: `reserve_products_responses`,
-	//}
-	//
-	//err := c.producer.WriteMessages(c.ctx, msg)
-	//if err != nil {
-	//	c.log.Fatal(err)
-	//}
 }
 
 // CancelOrder declines order products reservation.
@@ -81,19 +65,6 @@ func (c *StorageConsumer) CancelOrder(message kafka.Message) error {
 		return err
 	}
 
-	return nil
-}
-
-// SaveRequest declines order products reservation.
-func (c *StorageConsumer) SaveRequest(request requests.OrderRequest) error {
-	/*
-		reservation := models.ToReservation(request)
-		_, err := c.reservations.InsertOne(c.ctx, reservation)
-
-		if err != nil {
-			return err
-		}
-	*/
 	return nil
 }
 
@@ -121,7 +92,9 @@ func (c *StorageConsumer) launchConsumer(r *kafka.Reader, handler func(message k
 		for {
 			m, err := r.ReadMessage(context.Background())
 			if err != nil {
-				c.log.Error(`read message err:`, err)
+				if err != io.EOF {
+					c.log.Error(`read message err: `, err)
+				}
 				continue
 			}
 

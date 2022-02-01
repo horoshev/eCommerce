@@ -1,4 +1,4 @@
-package topics
+package models
 
 const (
 	StorageReserveOrderTopic = `storage-reserve-order`

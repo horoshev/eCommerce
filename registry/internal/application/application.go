@@ -4,15 +4,11 @@ import (
 	"context"
 	"eCommerce/registry/docs"
 	"eCommerce/registry/internal/api"
-	"eCommerce/registry/internal/consumers/topics"
+	"eCommerce/registry/internal/consumers"
 	"eCommerce/registry/internal/core"
 	"eCommerce/registry/internal/data"
-	"eCommerce/registry/internal/resources"
 	"github.com/go-chi/chi"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -21,14 +17,16 @@ import (
 	"time"
 )
 
-// App implements graceful shutdown
+const ServiceName = `registry`
+
+// App is used for configuration and running an application. Implements graceful shutdown.
 type App struct {
 	cfg       *Config
 	ctx       context.Context
 	cancelCtx context.CancelFunc
 	log       *zap.SugaredLogger
 	router    *chi.Router
-	resources *resources.Resources
+	resources *RegistryResources
 
 	OrderCoordinator   *core.OrderCoordinator
 	PurchaseController *core.Purchaser
@@ -40,40 +38,21 @@ func New() *App {
 
 	s := new(App)
 	s.log = logger.Sugar()
-	s.cfg = s.configFromEnv()
+	s.cfg = NewConfig()
 	s.ctx, s.cancelCtx = context.WithCancel(context.Background())
 
 	return s
 }
 
-func (a *App) configFromEnv() *Config {
-	cfg := new(Config)
-	err := envconfig.Process("", cfg)
-
-	if err != nil {
-		a.log.Fatalf("can't process the config: %s", err)
-	}
-
-	return cfg
-}
-
 func (a *App) Build() {
 	a.log.Info("Configuring server and initializing resources...")
-	a.resources = resources.New(a.ctx, a.log, &resources.ConnectionConfig{
-		MongoConnectionUrl: a.cfg.MongoConnectionUrl,
-		KafkaConnectionUrl: a.cfg.KafkaConnectionUrl,
-	})
-	a.resources.InitMongoDB()
-	a.resources.InitKafka(&resources.TopicConfig{
-		UsersTopic:  topics.WalletCreateTopic,
-		OrdersTopic: topics.StorageReserveOrderTopic,
-	})
+	a.resources = NewRegistryResources(a.ctx, a.log, a.cfg)
 
-	repository := data.NewMongoRegistryRepository(a.resources.Mongo)
+	repository := data.NewMongoRegistryRepository(a.resources.Database)
 	coordinator := core.NewOrderCoordinator(a.log, repository, a.resources.Producer)
 	a.OrderCoordinator = coordinator
-	a.PurchaseController = core.NewPurchaser(a.resources, coordinator)
-	a.RegistryController = core.NewRequestRegistry(a.log, a.resources)
+	a.PurchaseController = core.NewPurchaser(a.log, a.resources.Database, a.resources.Producer, coordinator)
+	a.RegistryController = core.NewRequestRegistry(a.log, a.resources.Database, a.resources.Producer)
 
 	a.router = api.NewRouter(a.PurchaseController, a.RegistryController, &api.RouterConfig{
 		Host: a.cfg.ApplicationHost,
@@ -92,12 +71,7 @@ func (a *App) Run() {
 	}(a.log)
 
 	a.log.Info("Starting the server...")
-	a.OrderCoordinator.Run(kafka.ReaderConfig{
-		Brokers:  []string{a.cfg.KafkaConnectionUrl},
-		MinBytes: 10e1,
-		MaxBytes: 10e3,
-		Logger:   log.Default(),
-	})
+	a.OrderCoordinator.Run(consumers.BrokerReaderConfig(a.cfg.KafkaConnectionUrl))
 
 	addr := ":" + strconv.Itoa(a.cfg.ApplicationPort)
 	server := &http.Server{Addr: addr, Handler: *a.router}
@@ -119,7 +93,7 @@ func (a *App) Run() {
 		}()
 
 		// Trigger graceful shutdown
-		a.resources.Release()
+		a.resources.Release(shutdownCtx)
 		err := server.Shutdown(shutdownCtx)
 		if err != nil {
 			a.log.Fatal(err)

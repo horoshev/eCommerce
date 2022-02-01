@@ -4,10 +4,6 @@ import (
 	"eCommerce/registry/internal/application"
 )
 
-const (
-	Version = `1.0.0`
-)
-
 // @title Registry
 // @version 1.0
 // @description This API is entrypoint for user requests.

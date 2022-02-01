@@ -1,7 +1,6 @@
 package application
 
 import (
-	"eCommerce/storage/internal/consumers"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -25,13 +24,6 @@ func NewConfig() *Config {
 	if err != nil {
 		panic(err)
 	}
-
-	return cfg
-}
-
-func (c *Config) ToConsumerConfig() *consumers.ConsumerConfig {
-	cfg := new(consumers.ConsumerConfig)
-	cfg.KafkaConnectionUrl = c.KafkaConnectionUrl
 
 	return cfg
 }

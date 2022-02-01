@@ -2,7 +2,6 @@ package consumers
 
 import (
 	"context"
-	"eCommerce/registry/internal/consumers/topics"
 	"eCommerce/registry/internal/data"
 	"eCommerce/registry/internal/models"
 	"encoding/json"
@@ -54,19 +53,19 @@ func NewOrderConsumerSet(log *zap.SugaredLogger, producer *kafka.Writer, reposit
 
 	set.bindings = []ConsumerBinding{
 		{
-			topic:   topics.StorageReserveOrderResponseTopic,
+			topic:   models.StorageReserveOrderResponseTopic,
 			handler: set.OrderReservedHandler,
 		},
 		{
-			topic:   topics.StorageCancelOrderResponseTopic,
+			topic:   models.StorageCancelOrderResponseTopic,
 			handler: set.OrderReserveCanceledHandler,
 		},
 		{
-			topic:   topics.WalletPayOrderResponseTopic,
+			topic:   models.WalletPayOrderResponseTopic,
 			handler: set.OrderPaidHandler,
 		},
 		{
-			topic:   topics.WalletCancelOrderResponseTopic,
+			topic:   models.WalletCancelOrderResponseTopic,
 			handler: set.OrderPayCanceledHandler,
 		},
 	}
@@ -88,13 +87,6 @@ func (oc *OrderConsumerSet) OrderReservedHandler(m *kafka.Message) {
 		oc.log.Error(err)
 		return
 	}
-
-	// TODO:
-	// ~ 1. receive a price from storage
-	// + 2. send price to reserve in wallet
-	// + 3. add update order method. also can update a amount of order
-	// + 4. add repository
-	// order changes should be log
 
 	if !IsSuccess(m) {
 		order, err = oc.repository.UpdateOrderStatus(order.Id, models.OrderError)
@@ -119,7 +111,7 @@ func (oc *OrderConsumerSet) OrderReservedHandler(m *kafka.Message) {
 		return
 	}
 
-	err = oc.Publish(topics.WalletPayOrderTopic, order.Id.Hex(), value)
+	err = oc.Publish(models.WalletPayOrderTopic, order.Id.Hex(), value)
 	if err != nil {
 		oc.log.Error(err)
 		return
@@ -171,7 +163,7 @@ func (oc *OrderConsumerSet) OrderPaidHandler(m *kafka.Message) {
 		oc.log.Error(err)
 	}
 
-	err = oc.Publish(topics.StorageCancelOrderTopic, orderId.Hex(), m.Value)
+	err = oc.Publish(models.StorageCancelOrderTopic, orderId.Hex(), m.Value)
 	if err != nil {
 		oc.log.Error(err)
 	}
@@ -202,7 +194,7 @@ func (oc *OrderConsumerSet) OrderPayCanceledHandler(m *kafka.Message) {
 		oc.log.Error(err)
 	}
 
-	err = oc.Publish(topics.StorageCancelOrderTopic, orderId.Hex(), m.Value)
+	err = oc.Publish(models.StorageCancelOrderTopic, orderId.Hex(), m.Value)
 	if err != nil {
 		oc.log.Error(err)
 	}

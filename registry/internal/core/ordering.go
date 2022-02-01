@@ -4,13 +4,13 @@ import (
 	"context"
 	"eCommerce/registry/internal/api/requests"
 	"eCommerce/registry/internal/models"
-	"eCommerce/registry/internal/resources"
 	"errors"
 	"github.com/segmentio/kafka-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"time"
 )
 
@@ -20,17 +20,18 @@ type PurchaseController interface {
 }
 
 type Purchaser struct {
-	Coordinator *OrderCoordinator
+	log         *zap.SugaredLogger
 	Orders      *mongo.Collection
 	Producer    *kafka.Writer
+	Coordinator *OrderCoordinator
 }
 
-func NewPurchaser(r *resources.Resources, c *OrderCoordinator) *Purchaser {
+func NewPurchaser(log *zap.SugaredLogger, db *mongo.Database, producer *kafka.Writer, c *OrderCoordinator) *Purchaser {
 	p := new(Purchaser)
-
+	p.log = log
+	p.Orders = db.Collection("orders")
+	p.Producer = producer
 	p.Coordinator = c
-	p.Orders = r.Mongo.Collection("orders")
-	p.Producer = r.Producer
 
 	return p
 }

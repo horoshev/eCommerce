@@ -33,29 +33,20 @@ func New() *App {
 }
 
 func (a *App) Build() {
-
-	// TODO:
-	// 1. Consumer for new orders
-	// 2. Consumer for cancel order
-	// 3. Producer for reservation result
-	// 4. Database
-	// 5. Kafka
-	// 6. Create test products
-
-	a.resources = NewStorageResources(a.ctx, a.cfg, a.log)
-	a.resources.Initialize()
-
+	a.resources = NewStorageResources(a.ctx, a.cfg, a.log).Initialize()
 	storage := core.NewStorage(a.log, a.resources.Database, a.resources.Producer)
-	a.storageConsumer = consumers.NewStorageConsumer(context.Background(), a.log, a.cfg.ToConsumerConfig(), storage)
+	a.storageConsumer = consumers.NewStorageConsumer(context.Background(), a.log, a.cfg.KafkaConnectionUrl, storage)
 }
 
 func (a *App) InitTestProducts() {
+	a.log.Info("generating test products...")
+
 	products := GenerateProducts(5)
 	collection := a.resources.Database.Collection(`products`)
-
-	documents, err := collection.CountDocuments(context.TODO(), bson.M{})
+	documents, err := collection.CountDocuments(context.Background(), bson.M{})
 	if err != nil {
 		a.log.Error(err)
+		return
 	}
 
 	if documents > 0 {
@@ -63,15 +54,17 @@ func (a *App) InitTestProducts() {
 		return
 	}
 
-	_, err = collection.InsertMany(context.TODO(), AsInterfaces(products))
+	a.log.Info("inserting test products to the database...")
+	_, err = collection.InsertMany(context.Background(), AsInterfaces(products))
 	if err != nil {
 		a.log.Error(err)
+		return
 	}
+
+	a.log.Info("successfully complete test products initialization...")
 }
 
 func (a *App) Run() {
-
-	// TODO: Update Graceful shutdown
 	defer func(log *zap.SugaredLogger) {
 		err := log.Sync()
 		if err != nil {
@@ -94,10 +87,10 @@ func (a *App) Run() {
 	a.log.Info("Stopping the app...")
 
 	if err := a.storageConsumer.Stop(); err != nil {
-		a.log.Error("Got an error while stopping the business logic server.", "err", err)
+		a.log.Error("Got an error while stopping the storage consumer.", "err", err)
 	}
 
-	timeout, _ := context.WithTimeout(context.TODO(), 10*time.Second)
+	timeout, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	err := a.resources.Release(timeout)
 	if err != nil {
 		a.log.Error("Got an error while releasing resources.", "err", err)

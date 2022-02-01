@@ -30,7 +30,7 @@ func NewMongoRegistryRepository(db *mongo.Database) *MongoRegistryRepository {
 
 func (m *MongoRegistryRepository) FindOrderId(id primitive.ObjectID) (*models.Order, error) {
 	filter := bson.D{{"_id", id}}
-	single := m.orders.FindOne(context.TODO(), filter)
+	single := m.orders.FindOne(context.Background(), filter)
 	if err := single.Err(); err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (m *MongoRegistryRepository) UpdateOrder(id primitive.ObjectID, updates []b
 		{"$push", CreateStatusUpdateNote(updates)},
 	}
 	option := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	single := m.orders.FindOneAndUpdate(context.TODO(), filter, update, option)
+	single := m.orders.FindOneAndUpdate(context.Background(), filter, update, option)
 	if err := single.Err(); err != nil {
 		return nil, err
 	}

@@ -26,9 +26,11 @@ func NewStorageResources(ctx context.Context, cfg *Config, log *zap.SugaredLogge
 	return sr
 }
 
-func (sr *StorageResources) Initialize() {
+func (sr *StorageResources) Initialize() *StorageResources {
 	sr.initDatabase()
 	sr.initProducer()
+
+	return sr
 }
 
 func (sr *StorageResources) Release(ctx context.Context) error {
@@ -47,7 +49,7 @@ func (sr *StorageResources) initDatabase() {
 		sr.log.Fatal(err)
 	}
 
-	sr.Database = c.Database(sr.cfg.ServiceName)
+	sr.Database = c.Database(ServiceName)
 }
 
 func (sr *StorageResources) initProducer() {

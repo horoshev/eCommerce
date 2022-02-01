@@ -2,7 +2,6 @@ package core
 
 import (
 	"context"
-	"eCommerce/wallet/internal/messages"
 	"eCommerce/wallet/internal/models"
 	"encoding/json"
 	"errors"
@@ -16,7 +15,7 @@ import (
 )
 
 type WalletService interface {
-	CreateNewWallet(user *messages.User) (*models.Wallet, error)
+	CreateNewWallet(user *models.User) (*models.Wallet, error)
 	PayOrder(order *models.Order) (*models.Transaction, error)
 	CancelOrder(order *models.Order) (*models.Transaction, error)
 }
@@ -40,7 +39,7 @@ func NewWalletController(ctx context.Context, log *zap.SugaredLogger, db *mongo.
 	return wallet
 }
 
-func (w *WalletController) CreateNewWallet(user *messages.User) (*models.Wallet, error) {
+func (w *WalletController) CreateNewWallet(user *models.User) (*models.Wallet, error) {
 	wallet := new(models.Wallet)
 	wallet.UserId = user.Id
 	wallet.UserName = user.Name
@@ -88,7 +87,7 @@ func (w *WalletController) PayOrder(key primitive.ObjectID, order *models.Order)
 			w.log.Error(err)
 			message = []byte(`marshaling error`)
 		}
-		err = w.producer.WriteMessages(context.TODO(), kafka.Message{
+		err = w.producer.WriteMessages(context.Background(), kafka.Message{
 			Key:   []byte(key.Hex()),
 			Value: message,
 			Topic: models.WalletPayOrderResponseTopic,
@@ -158,7 +157,7 @@ func (w *WalletController) CancelOrder(order *models.Order) (*models.Transaction
 			w.log.Error(err)
 			message = []byte(`marshaling error`)
 		}
-		err = w.producer.WriteMessages(context.TODO(), kafka.Message{
+		err = w.producer.WriteMessages(context.Background(), kafka.Message{
 			Key:   []byte(order.Id.Hex()),
 			Value: message,
 			Topic: models.WalletCancelOrderResponseTopic,
@@ -201,7 +200,7 @@ func (w *WalletController) CancelOrder(order *models.Order) (*models.Transaction
 		{"$set", bson.M{`transactions.$.status`: models.TransactionCancelled}},
 	}
 	option := options.FindOneAndUpdate().SetReturnDocument(options.After)
-	single := w.wallets.FindOneAndUpdate(context.TODO(), filter, update, option)
+	single := w.wallets.FindOneAndUpdate(context.Background(), filter, update, option)
 	if err = single.Err(); err != nil {
 		response = NewError(err, order)
 		return nil, err

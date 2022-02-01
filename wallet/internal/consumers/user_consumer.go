@@ -3,7 +3,6 @@ package consumers
 import (
 	"context"
 	"eCommerce/wallet/internal/core"
-	"eCommerce/wallet/internal/messages"
 	"eCommerce/wallet/internal/models"
 	"encoding/json"
 	"github.com/segmentio/kafka-go"
@@ -19,20 +18,21 @@ type UserConsumer struct {
 	reader *kafka.Reader
 }
 
-func NewUserConsumer(ctx context.Context, log *zap.SugaredLogger, cfg *ConsumerConfig, wallet *core.WalletController) *UserConsumer {
+func NewUserConsumer(ctx context.Context, log *zap.SugaredLogger, kafkaAddr string, wallet *core.WalletController) *UserConsumer {
 	consumer := new(UserConsumer)
-
 	consumer.ctx = ctx
 	consumer.log = log
-	consumer.reader = kafka.NewReader(cfg.ToReaderConfig(models.WalletTopic, models.WalletGroup))
 	consumer.wallet = wallet
+
+	readerConfig := ReaderConfig(kafkaAddr, models.WalletTopic, models.WalletGroup)
+	consumer.reader = kafka.NewReader(readerConfig)
 
 	return consumer
 }
 
 // NewWallet creates new wallet for the customer and initialize balance with some bonus.
 func (u *UserConsumer) NewWallet(msg kafka.Message) (*models.Wallet, error) {
-	user := new(messages.User)
+	user := new(models.User)
 	err := json.Unmarshal(msg.Value, user)
 	if err != nil {
 		return nil, err
@@ -43,7 +43,6 @@ func (u *UserConsumer) NewWallet(msg kafka.Message) (*models.Wallet, error) {
 		return nil, err
 	}
 
-	// TODO: ...
 	return wallet, nil
 }
 

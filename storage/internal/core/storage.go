@@ -54,7 +54,7 @@ func (s Storage) ReserveOrder(order *models.Order) error {
 			message = []byte(`marshaling error`)
 		}
 
-		err = s.producer.WriteMessages(context.TODO(), kafka.Message{
+		err = s.producer.WriteMessages(context.Background(), kafka.Message{
 			Key:   []byte(order.Id.Hex()),
 			Value: message,
 			Topic: StorageReserveOrderResponseTopic,
@@ -73,7 +73,7 @@ func (s Storage) ReserveOrder(order *models.Order) error {
 		response = NewError(err, order)
 		return err
 	}
-	defer dbSession.EndSession(context.TODO())
+	defer dbSession.EndSession(context.Background())
 
 	err = mongo.WithSession(context.Background(), dbSession, s.ReserveOrderTx(dbSession, order))
 	if err != nil {
@@ -93,7 +93,7 @@ func (s Storage) CancelOrder(order *models.Order) error {
 		if err != nil {
 			message = []byte(`marshaling error`)
 		}
-		err = s.producer.WriteMessages(context.TODO(), kafka.Message{
+		err = s.producer.WriteMessages(context.Background(), kafka.Message{
 			Key:   []byte(order.Id.Hex()),
 			Value: message,
 			Topic: StorageCancelOrderResponseTopic,
@@ -112,7 +112,7 @@ func (s Storage) CancelOrder(order *models.Order) error {
 		response = NewError(err, order)
 		return err
 	}
-	defer dbSession.EndSession(context.TODO())
+	defer dbSession.EndSession(context.Background())
 
 	err = mongo.WithSession(context.Background(), dbSession, s.CancelOrderTx(dbSession, order))
 	if err != nil {

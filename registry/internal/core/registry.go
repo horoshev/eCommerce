@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"context"
 	"eCommerce/registry/internal/api/requests"
-	"eCommerce/registry/internal/consumers/topics"
 	"eCommerce/registry/internal/models"
-	"eCommerce/registry/internal/resources"
 	"encoding/json"
 	"errors"
 	"github.com/segmentio/kafka-go"
@@ -34,13 +32,12 @@ type RequestRegistry struct {
 	Producer *kafka.Writer
 }
 
-func NewRequestRegistry(log *zap.SugaredLogger, r *resources.Resources) *RequestRegistry {
+func NewRequestRegistry(log *zap.SugaredLogger, db *mongo.Database, producer *kafka.Writer) *RequestRegistry {
 	p := new(RequestRegistry)
-
 	p.log = log
-	p.Requests = r.Mongo.Collection("requests")
-	p.Users = r.Mongo.Collection("users")
-	p.Producer = r.Producer
+	p.Producer = producer
+	p.Users = db.Collection("users")
+	p.Requests = db.Collection("requests")
 
 	return p
 }
@@ -82,10 +79,10 @@ func (rr *RequestRegistry) CreateUser() (*models.User, error) {
 			return
 		}
 
-		err = rr.Producer.WriteMessages(context.TODO(), kafka.Message{
+		err = rr.Producer.WriteMessages(context.Background(), kafka.Message{
 			Key:   []byte(u.Id.Hex()),
 			Value: payload,
-			Topic: topics.WalletCreateTopic,
+			Topic: models.WalletCreateTopic,
 		})
 		if err != nil {
 			rr.log.Error(err)

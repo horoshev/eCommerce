@@ -8,20 +8,8 @@ type Response struct {
 	Payload   interface{}
 }
 
-func Success(message string) Response {
-	return Response{IsSuccess: true, Message: message}
-}
-
-func Error(message string) Response {
-	return Response{IsSuccess: false, Message: message}
-}
-
 func NewSuccess(message string, payload interface{}) *Response {
 	return &Response{IsSuccess: true, Message: message, Payload: payload}
-}
-
-func NewFailure(message string) *Response {
-	return &Response{IsSuccess: false, Message: message}
 }
 
 func NewError(err error, payload interface{}) *Response {

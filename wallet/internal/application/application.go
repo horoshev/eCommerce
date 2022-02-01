@@ -4,7 +4,6 @@ import (
 	"context"
 	"eCommerce/wallet/internal/consumers"
 	"eCommerce/wallet/internal/core"
-	"github.com/kelseyhightower/envconfig"
 	"go.uber.org/zap"
 	"os"
 	"os/signal"
@@ -23,25 +22,22 @@ type App struct {
 	orderConsumer *consumers.OrderConsumer
 }
 
-func New(environment Environment) *App {
+func New() *App {
 	logger, _ := zap.NewProduction()
 
 	app := new(App)
+	app.cfg = NewConfig()
 	app.log = logger.Sugar()
-	app.cfg = app.configFromEnv(environment)
 	app.ctx, app.cancelCtx = context.WithCancel(context.Background())
 
 	return app
 }
 
 func (a *App) Build() {
-	cfg := a.cfg.ToConsumerConfig()
-
 	a.resource = NewWalletResources(a.ctx, a.log, a.cfg).Initialize()
 	controller := core.NewWalletController(a.ctx, a.log, a.resource.Database, a.resource.KafkaProducer)
-
-	a.userConsumer = consumers.NewUserConsumer(a.ctx, a.log, cfg, controller)
-	a.orderConsumer = consumers.NewOrderConsumer(a.ctx, a.log, cfg, controller)
+	a.userConsumer = consumers.NewUserConsumer(a.ctx, a.log, a.cfg.KafkaConnectionUrl, controller)
+	a.orderConsumer = consumers.NewOrderConsumer(a.ctx, a.log, a.cfg.KafkaConnectionUrl, controller)
 }
 
 func (a *App) Run() {
@@ -75,32 +71,8 @@ func (a *App) Run() {
 		a.log.Error("Got an error while stopping the business logic server.", "err", err)
 	}
 
-	timeout, _ := context.WithTimeout(context.TODO(), 10*time.Second)
+	timeout, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	a.resource.Release(timeout)
 
 	a.log.Info("The app is calling the last defers and will be stopped.")
-}
-
-func (a *App) configFromEnv(environment Environment) *Config {
-	//cfg := new(Config)
-	var cfg Config
-	var err error
-
-	switch {
-	case environment.Is(Production):
-		prod := ProductionConfig{}
-		err = envconfig.Process("", &prod)
-		cfg = (Config)(prod)
-	default:
-		dev := DevelopmentConfig{}
-		err = envconfig.Process("", &dev)
-		cfg = (Config)(dev)
-	}
-
-	//err := envconfig.Process("", cfg)
-	if err != nil {
-		a.log.Fatalf("can't process the config: %s", err)
-	}
-
-	return &cfg
 }

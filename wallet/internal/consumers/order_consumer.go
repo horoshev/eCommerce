@@ -26,13 +26,14 @@ type OrderConsumer struct {
 	reader *kafka.Reader
 }
 
-func NewOrderConsumer(ctx context.Context, log *zap.SugaredLogger, cfg *ConsumerConfig, wallet *core.WalletController) *OrderConsumer {
+func NewOrderConsumer(ctx context.Context, log *zap.SugaredLogger, kafkaAddr string, wallet *core.WalletController) *OrderConsumer {
 	consumer := new(OrderConsumer)
-
 	consumer.ctx = ctx
 	consumer.log = log
-	consumer.reader = kafka.NewReader(cfg.ToReaderConfig(PayTopic, PayGroup))
 	consumer.wallet = wallet
+
+	cfg := ReaderConfig(kafkaAddr, PayTopic, PayGroup)
+	consumer.reader = kafka.NewReader(cfg)
 
 	return consumer
 }
@@ -41,12 +42,10 @@ func (c *OrderConsumer) Start() {
 	go func() {
 		for {
 			m, err := c.reader.ReadMessage(context.Background())
-			if err == io.EOF {
-				continue
-			}
-
-			if err != nil && err != io.EOF {
-				c.log.Error(`read message err: `, err)
+			if err != nil {
+				if err != io.EOF {
+					c.log.Error(`read message err: `, err)
+				}
 				continue
 			}
 
@@ -85,8 +84,6 @@ func (c *OrderConsumer) ReserveCredit(message kafka.Message) (*models.Transactio
 		return nil, err
 	}
 
-	// TODO: send response to registry
-
 	return payment, nil
 }
 
@@ -97,13 +94,11 @@ func (c *OrderConsumer) CancelOrderTransaction(message kafka.Message) error {
 		return err
 	}
 
-	refund, err := c.wallet.CancelOrder(order)
+	_, err = c.wallet.CancelOrder(order)
 	if err != nil {
 		return err
 	}
 
-	// TODO: ...
-	_ = refund.Id
 	return nil
 }
 

@@ -1,7 +1,6 @@
 package models
 
 import (
-	"eCommerce/storage/internal/requests"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -20,26 +19,9 @@ type OrderReservation struct {
 }
 
 type ProductReservation struct {
-	//ProductId primitive.ObjectID `json:"product_id" bson:"product_id"`
 	Id          primitive.ObjectID `json:"id" bson:"_id,omitempty"`
 	ProductName string             `json:"product_name" bson:"product_name"`
 	Quantity    int64              `json:"quantity" bson:"quantity"`
-	//Status      ReservationStatus  `json:"status" bson:"status"`
-}
-
-func ToReservation(request requests.OrderRequest) *OrderReservation {
-	r := new(OrderReservation)
-	r.OrderId = request.OrderId
-	r.Products = make([]ProductReservation, len(request.Products))
-
-	for i, x := range request.Products {
-		r.Products[i] = ProductReservation{
-			ProductName: x.Name, // TODO:
-			Quantity:    x.Quantity,
-		}
-	}
-
-	return r
 }
 
 func OrderToReservation(order *Order) *OrderReservation {

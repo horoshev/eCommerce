@@ -56,7 +56,7 @@ var doc = `{
         },
         "/order": {
             "post": {
-                "description": "Processing user order request. When ` + "`" + `uid` + "`" + ` param missed - creates new user and wallet as well.",
+                "description": "Processing user order request. When ` + "`" + `uid` + "`" + ` param missed - creates new user and wallet as well.\nParameter ` + "`" + `uid` + "`" + ` is stored in response headers under ` + "`" + `x-uid` + "`" + ` name.",
                 "consumes": [
                     "application/json"
                 ],

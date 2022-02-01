@@ -161,11 +161,13 @@ func (oc *OrderConsumerSet) OrderPaidHandler(m *kafka.Message) {
 	_, err = oc.repository.UpdateOrderStatus(orderId, models.OrderCancelPending)
 	if err != nil {
 		oc.log.Error(err)
+		return
 	}
 
 	err = oc.Publish(models.StorageCancelOrderTopic, orderId.Hex(), m.Value)
 	if err != nil {
 		oc.log.Error(err)
+		return
 	}
 
 	_, err = oc.repository.UpdateOrderStatus(orderId, models.OrderReservationCancelPending)
@@ -192,11 +194,13 @@ func (oc *OrderConsumerSet) OrderPayCanceledHandler(m *kafka.Message) {
 	_, err = oc.repository.UpdateOrderStatus(orderId, models.OrderPaymentCanceled)
 	if err != nil {
 		oc.log.Error(err)
+		return
 	}
 
 	err = oc.Publish(models.StorageCancelOrderTopic, orderId.Hex(), m.Value)
 	if err != nil {
 		oc.log.Error(err)
+		return
 	}
 
 	_, err = oc.repository.UpdateOrderStatus(orderId, models.OrderReservationCancelPending)

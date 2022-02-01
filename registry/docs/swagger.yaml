@@ -109,8 +109,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: Processing user order request. When `uid` param missed - creates
-        new user and wallet as well.
+      description: |-
+        Processing user order request. When `uid` param missed - creates new user and wallet as well.
+        Parameter `uid` is stored in response headers under `x-uid` name.
       parameters:
       - description: auth User ID
         in: query

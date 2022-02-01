@@ -41,6 +41,7 @@ func Index(swagURI string) func(w http.ResponseWriter, r *http.Request) {
 // OrderHandler godoc
 // @Summary 	Creates new order.
 // @Description	Processing user order request. When `uid` param missed - creates new user and wallet as well.
+// @Description	Parameter `uid` is stored in response headers under `x-uid` name.
 // @Tags        orders
 // @Accept      json
 // @Produce     json

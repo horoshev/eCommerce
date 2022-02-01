@@ -12,5 +12,5 @@ type Order struct {
 	Amount    float64            `json:"amount" bson:"amount" extensions:"x-order=3"`
 	Timestamp time.Time          `json:"timestamp" bson:"timestamp" extensions:"x-order=4"`
 	Items     []OrderProduct     `json:"items" bson:"items" extensions:"x-order=5"`
-	Updates   []OrderUpdate      `json:"updates" bson:"updates" extensions:"x-order=6"`
+	Updates   []OrderUpdate      `json:"-" bson:"updates" extensions:"x-order=6"`
 }

@@ -167,6 +167,10 @@ func Identity(r *http.Request) (*models.Identity, error) {
 	}
 	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
 
+	if identity, err := IdentityFromParams(r); err == nil {
+		return identity, nil
+	}
+
 	if identity, err := IdentityFromBody(body); err == nil {
 		return identity, nil
 	}
@@ -176,10 +180,6 @@ func Identity(r *http.Request) (*models.Identity, error) {
 	}
 
 	if identity, err := IdentityFromContext(r.Context()); err == nil {
-		return identity, nil
-	}
-
-	if identity, err := IdentityFromParams(r); err == nil {
 		return identity, nil
 	}
 

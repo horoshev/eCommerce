@@ -35,8 +35,9 @@ func NewRouter(pc core.PurchaseController, rc core.RegistryController, cfg *Rout
 
 	r.Get("/", Index(swagIndex))
 	r.Get("/requests", rh.ListRequestsHandler)
-	r.Get("/requests/{uid}", rh.ListUserRequestsHandler)
+	r.Get("/requests/{id}", rh.ListUserRequestsHandler)
 	r.Get("/orders", ph.ListOrdersHandler)
+	r.Get("/orders/{id}", ph.ListUserOrdersHandler)
 	r.Post("/order", ph.OrderHandler)
 
 	r.Get("/swagger/*", swag.Handler(swag.URL(swagDoc)))

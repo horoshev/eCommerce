@@ -17,6 +17,7 @@ import (
 type PurchaseController interface {
 	Order(userId primitive.ObjectID, r *requests.OrderRequest) (*models.Order, error)
 	ListOrders(r *requests.PageRequest) ([]models.Order, error)
+	ListUserOrders(userId primitive.ObjectID, r *requests.PageRequest) ([]models.Order, error)
 }
 
 type Purchaser struct {
@@ -72,6 +73,29 @@ func (p *Purchaser) ListOrders(r *requests.PageRequest) ([]models.Order, error) 
 	opt.SetLimit(int64(r.Size))
 
 	records, err := p.Orders.Find(context.Background(), bson.D{}, opt)
+	if err != nil {
+		return nil, err
+	}
+
+	list := make([]models.Order, 0, r.Size)
+	for records.Next(context.Background()) {
+		var record models.Order
+		if err = records.Decode(&record); err != nil {
+			return nil, err
+		}
+		list = append(list, record)
+	}
+
+	return list, nil
+}
+
+func (p *Purchaser) ListUserOrders(userId primitive.ObjectID, r *requests.PageRequest) ([]models.Order, error) {
+	opt := options.Find()
+	opt.SetSort(bson.D{{"_id", -1}})
+	opt.SetSkip(int64(r.Page * r.Size))
+	opt.SetLimit(int64(r.Size))
+	filter := bson.D{{"user_id", userId}}
+	records, err := p.Orders.Find(context.Background(), filter, opt)
 	if err != nil {
 		return nil, err
 	}

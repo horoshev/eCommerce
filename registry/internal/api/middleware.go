@@ -27,11 +27,6 @@ func (rr *RequestRegistryMiddleware) UserRegistry(next http.Handler) http.Handle
 		}
 
 		w.Header().Set("X-UID", uid)
-		//http.SetCookie(w, &http.Cookie{
-		//	Name: `uid`,
-		//	Value: uid,
-		//})
-
 		id, _ := primitive.ObjectIDFromHex(uid)
 
 		ctx := context.WithValue(r.Context(), `ident`, models.Identity{Id: id})

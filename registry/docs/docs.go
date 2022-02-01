@@ -36,6 +36,14 @@ var doc = `{
                     "general"
                 ],
                 "summary": "Welcome message from microservice.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "auth User ID",
+                        "name": "uid",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -61,11 +69,18 @@ var doc = `{
                 "summary": "Creates new order.",
                 "parameters": [
                     {
-                        "description": "User ID",
+                        "type": "string",
+                        "description": "auth User ID",
                         "name": "uid",
+                        "in": "query"
+                    },
+                    {
+                        "description": "Order",
+                        "name": "order",
                         "in": "body",
+                        "required": true,
                         "schema": {
-                            "type": "string"
+                            "$ref": "#/definitions/requests.OrderRequest"
                         }
                     }
                 ],
@@ -103,14 +118,13 @@ var doc = `{
                 "tags": [
                     "orders"
                 ],
-                "summary": "Returns list of created orders for user.",
+                "summary": "Returns list of created orders for all users.",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
+                        "description": "auth User ID",
                         "name": "uid",
-                        "in": "path",
-                        "required": true
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -122,6 +136,53 @@ var doc = `{
                         "type": "string",
                         "description": "Page size",
                         "name": "size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Order"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/orders/{id}": {
+            "get": {
+                "description": "Find and return created orders of the user using paging.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Returns list of created orders for user.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID to filter orders",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "auth User ID",
+                        "name": "uid",
                         "in": "query"
                     }
                 ],
@@ -156,8 +217,14 @@ var doc = `{
                 "tags": [
                     "requests"
                 ],
-                "summary": "Returns list of created requests for users.",
+                "summary": "Returns list of created requests for all users.",
                 "parameters": [
+                    {
+                        "type": "string",
+                        "description": "auth User ID",
+                        "name": "uid",
+                        "in": "query"
+                    },
                     {
                         "type": "string",
                         "description": "Page number",
@@ -190,7 +257,7 @@ var doc = `{
                 }
             }
         },
-        "/requests/{uid}": {
+        "/requests/{id}": {
             "get": {
                 "description": "Find and return created requests of the user using paging.",
                 "consumes": [
@@ -206,10 +273,16 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "User ID",
-                        "name": "uid",
+                        "description": "User ID to filter requests",
+                        "name": "id",
                         "in": "path",
                         "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "auth User ID",
+                        "name": "uid",
+                        "in": "query"
                     },
                     {
                         "type": "string",
@@ -300,13 +373,6 @@ var doc = `{
                         "$ref": "#/definitions/models.OrderProduct"
                     },
                     "x-order": "5"
-                },
-                "updates": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/models.OrderUpdate"
-                    },
-                    "x-order": "6"
                 }
             }
         },
@@ -320,23 +386,6 @@ var doc = `{
                 "quantity": {
                     "type": "integer",
                     "x-order": "1"
-                }
-            }
-        },
-        "models.OrderUpdate": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "string",
-                    "x-order": "0"
-                },
-                "status": {
-                    "type": "string",
-                    "x-order": "1"
-                },
-                "timestamp": {
-                    "type": "string",
-                    "x-order": "2"
                 }
             }
         },
@@ -362,6 +411,17 @@ var doc = `{
                 "timestamp": {
                     "type": "string",
                     "x-order": "4"
+                }
+            }
+        },
+        "requests.OrderRequest": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.OrderProduct"
+                    }
                 }
             }
         }

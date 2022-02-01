@@ -37,11 +37,6 @@ definitions:
       timestamp:
         type: string
         x-order: "4"
-      updates:
-        items:
-          $ref: '#/definitions/models.OrderUpdate'
-        type: array
-        x-order: "6"
       user_id:
         type: string
         x-order: "1"
@@ -54,18 +49,6 @@ definitions:
       quantity:
         type: integer
         x-order: "1"
-    type: object
-  models.OrderUpdate:
-    properties:
-      id:
-        type: string
-        x-order: "0"
-      status:
-        type: string
-        x-order: "1"
-      timestamp:
-        type: string
-        x-order: "2"
     type: object
   models.UserRequest:
     properties:
@@ -85,6 +68,13 @@ definitions:
         type: string
         x-order: "1"
     type: object
+  requests.OrderRequest:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/models.OrderProduct'
+        type: array
+    type: object
 host: localhost:80
 info:
   contact: {}
@@ -100,6 +90,11 @@ paths:
       consumes:
       - application/json
       description: Returns name, version and link to the swagger.
+      parameters:
+      - description: auth User ID
+        in: query
+        name: uid
+        type: string
       produces:
       - application/json
       responses:
@@ -117,11 +112,16 @@ paths:
       description: Processing user order request. When `uid` param missed - creates
         new user and wallet as well.
       parameters:
-      - description: User ID
-        in: body
+      - description: auth User ID
+        in: query
         name: uid
+        type: string
+      - description: Order
+        in: body
+        name: order
+        required: true
         schema:
-          type: string
+          $ref: '#/definitions/requests.OrderRequest'
       produces:
       - application/json
       responses:
@@ -146,10 +146,9 @@ paths:
       - application/json
       description: Find and return created orders of the user using paging.
       parameters:
-      - description: User ID
-        in: path
+      - description: auth User ID
+        in: query
         name: uid
-        required: true
         type: string
       - description: Page number
         in: query
@@ -158,6 +157,37 @@ paths:
       - description: Page size
         in: query
         name: size
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Order'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.Response'
+      summary: Returns list of created orders for all users.
+      tags:
+      - orders
+  /orders/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Find and return created orders of the user using paging.
+      parameters:
+      - description: User ID to filter orders
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: auth User ID
+        in: query
+        name: uid
         type: string
       produces:
       - application/json
@@ -181,6 +211,10 @@ paths:
       - application/json
       description: Find and return created requests of the users using paging.
       parameters:
+      - description: auth User ID
+        in: query
+        name: uid
+        type: string
       - description: Page number
         in: query
         name: page
@@ -202,19 +236,23 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/api.Response'
-      summary: Returns list of created requests for users.
+      summary: Returns list of created requests for all users.
       tags:
       - requests
-  /requests/{uid}:
+  /requests/{id}:
     get:
       consumes:
       - application/json
       description: Find and return created requests of the user using paging.
       parameters:
-      - description: User ID
+      - description: User ID to filter requests
         in: path
-        name: uid
+        name: id
         required: true
+        type: string
+      - description: auth User ID
+        in: query
+        name: uid
         type: string
       - description: Page number
         in: query

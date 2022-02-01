@@ -3,8 +3,12 @@ package api
 import (
 	"eCommerce/registry/internal/api/requests"
 	"eCommerce/registry/internal/core"
+	"eCommerce/registry/internal/models"
 	"encoding/json"
+	"errors"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"strings"
 )
 
 type OrderHandlers struct {
@@ -21,6 +25,7 @@ type RegistryHandlers struct {
 // @Tags        general
 // @Accept      json
 // @Produce     json
+// @Param   	uid	query	string	false	"auth User ID"
 // @Success 	200 {object} ServerResponse
 // @Router 		/ [get]
 func Index(swagURI string) func(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +44,8 @@ func Index(swagURI string) func(w http.ResponseWriter, r *http.Request) {
 // @Tags        orders
 // @Accept      json
 // @Produce     json
-// @Param   	uid     body    string     false        "User ID"
+// @Param   	uid		query	string					false	"auth User ID"
+// @Param   	order	body	requests.OrderRequest	true	"Order"
 // @Success 	200 {object} models.Order
 // @Success 	400 {object} api.Response
 // @Failure 	500 {object} api.Response
@@ -64,12 +70,12 @@ func (c *OrderHandlers) OrderHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListOrdersHandler godoc
-// @Summary 	Returns list of created orders for user.
+// @Summary 	Returns list of created orders for all users.
 // @Description Find and return created orders of the user using paging.
 // @Tags        orders
 // @Accept      json
 // @Produce     json
-// @Param   	uid  path string true "User ID"
+// @Param   	uid  query string false "auth User ID"
 // @Param   	page query string false "Page number"
 // @Param   	size query string false "Page size"
 // @Success 	200 {object} []models.Order
@@ -87,12 +93,45 @@ func (c *OrderHandlers) ListOrdersHandler(w http.ResponseWriter, r *http.Request
 	OkResponse(w, result)
 }
 
+// ListUserOrdersHandler godoc
+// @Summary 	Returns list of created orders for user.
+// @Description Find and return created orders of the user using paging.
+// @Tags        orders
+// @Accept      json
+// @Produce     json
+// @Param   	id	path string true "User ID to filter orders"
+// @Param   	uid  query string false "auth User ID"
+// @Success 	200 {object} []models.Order
+// @Failure 	500 {object} api.Response
+// @Router 		/orders/{id} [get]
+func (c *OrderHandlers) ListUserOrdersHandler(w http.ResponseWriter, r *http.Request) {
+	request := requests.ParsePageRequest(r)
+	id, err := GetPathParameter(r.URL.Path, 1)
+	if err != nil {
+		BadRequestResponse(w, BadPathParameterError)
+	}
+
+	userId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		BadRequestResponse(w, BadPathParameterError)
+	}
+
+	result, err := c.PurchaseController.ListUserOrders(userId, request)
+	if err != nil {
+		BadRequestResponse(w, RequestBodyParseError)
+		return
+	}
+
+	OkResponse(w, result)
+}
+
 // ListRequestsHandler godoc
-// @Summary 	Returns list of created requests for users.
+// @Summary 	Returns list of created requests for all users.
 // @Description Find and return created requests of the users using paging.
 // @Tags        requests
 // @Accept      json
 // @Produce     json
+// @Param   	uid	 query	string false "auth User ID"
 // @Param   	page query string false "Page number"
 // @Param   	size query string false "Page size"
 // @Success 	200 {object} []models.UserRequest
@@ -116,25 +155,46 @@ func (c *RegistryHandlers) ListRequestsHandler(w http.ResponseWriter, r *http.Re
 // @Tags        requests
 // @Accept      json
 // @Produce     json
-// @Param   	uid  path string true "User ID"
-// @Param   	page query string false "Page number"
-// @Param   	size query string false "Page size"
+// @Param   	id   path 	string true  "User ID to filter requests"
+// @Param   	uid	 query	string false "auth User ID"
+// @Param   	page query 	string false "Page number"
+// @Param   	size query 	string false "Page size"
 // @Success 	200 {object} []models.UserRequest
 // @Failure 	500 {object} api.Response
-// @Router 		/requests/{uid} [get]
+// @Router 		/requests/{id} [get]
 func (c *RegistryHandlers) ListUserRequestsHandler(w http.ResponseWriter, r *http.Request) {
 	request := requests.ParsePageRequest(r)
-	identity, err := core.Identity(r)
+	id, err := GetPathParameter(r.URL.Path, 1)
+	if err != nil {
+		BadRequestResponse(w, BadPathParameterError)
+	}
+
+	userId, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		BadRequestResponse(w, BadPathParameterError)
+	}
+
 	if err != nil {
 		UnauthorizedResponse(w, RequestBodyParseError)
 		return
 	}
 
-	result, err := c.RegistryController.ListUserRequests(identity, request)
+	result, err := c.RegistryController.ListUserRequests(&models.Identity{Id: userId}, request)
 	if err != nil {
 		BadRequestResponse(w, RequestBodyParseError)
 		return
 	}
 
 	OkResponse(w, result)
+}
+
+func GetPathParameter(path string, index int) (string, error) {
+	path = strings.Trim(path, "/")
+	split := strings.Split(path, "/")
+
+	if len(split) < index {
+		return "", errors.New(`out of range`)
+	}
+
+	return split[index], nil
 }

@@ -1,14 +1,12 @@
 
 up:
-	docker-compose up
+	docker-compose up -d
 
 down:
-	docker-compsoe down
+	docker-compose stop
 
 test:
 	go test ./...
 
 swag:
 	swag init -o ./registry/docs -d ./registry -g ./cmd/main.go
-	swag init -o ./wallet/docs   -d ./wallet   -g ./cmd/main.go
-	swag init -o ./storage/docs  -d ./storage  -g ./cmd/main.go

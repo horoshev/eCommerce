@@ -22,7 +22,7 @@ definitions:
     properties:
       amount:
         type: number
-        x-order: "2"
+        x-order: "3"
       id:
         type: string
         x-order: "0"
@@ -30,13 +30,21 @@ definitions:
         items:
           $ref: '#/definitions/models.OrderProduct'
         type: array
-        x-order: "4"
+        x-order: "5"
       status:
         type: string
-        x-order: "1"
+        x-order: "2"
       timestamp:
         type: string
-        x-order: "3"
+        x-order: "4"
+      updates:
+        items:
+          $ref: '#/definitions/models.OrderUpdate'
+        type: array
+        x-order: "6"
+      user_id:
+        type: string
+        x-order: "1"
     type: object
   models.OrderProduct:
     properties:
@@ -46,6 +54,18 @@ definitions:
       quantity:
         type: integer
         x-order: "1"
+    type: object
+  models.OrderUpdate:
+    properties:
+      id:
+        type: string
+        x-order: "0"
+      status:
+        type: string
+        x-order: "1"
+      timestamp:
+        type: string
+        x-order: "2"
     type: object
   models.UserRequest:
     properties:
@@ -109,6 +129,10 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Order'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.Response'
         "500":
           description: Internal Server Error
           schema:

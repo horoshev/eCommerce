@@ -76,6 +76,12 @@ var doc = `{
                             "$ref": "#/definitions/models.Order"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.Response"
+                        }
+                    },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
@@ -272,24 +278,35 @@ var doc = `{
                     "type": "string",
                     "x-order": "0"
                 },
-                "status": {
+                "user_id": {
                     "type": "string",
                     "x-order": "1"
                 },
+                "status": {
+                    "type": "string",
+                    "x-order": "2"
+                },
                 "amount": {
                     "type": "number",
-                    "x-order": "2"
+                    "x-order": "3"
                 },
                 "timestamp": {
                     "type": "string",
-                    "x-order": "3"
+                    "x-order": "4"
                 },
                 "items": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/models.OrderProduct"
                     },
-                    "x-order": "4"
+                    "x-order": "5"
+                },
+                "updates": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.OrderUpdate"
+                    },
+                    "x-order": "6"
                 }
             }
         },
@@ -303,6 +320,23 @@ var doc = `{
                 "quantity": {
                     "type": "integer",
                     "x-order": "1"
+                }
+            }
+        },
+        "models.OrderUpdate": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "x-order": "0"
+                },
+                "status": {
+                    "type": "string",
+                    "x-order": "1"
+                },
+                "timestamp": {
+                    "type": "string",
+                    "x-order": "2"
                 }
             }
         },

@@ -46,7 +46,7 @@ func New() *App {
 
 func (a *App) Build() {
 	a.log.Info("Configuring server and initializing resources...")
-	a.resources = NewRegistryResources(a.ctx, a.log, a.cfg)
+	a.resources = NewRegistryResources(a.ctx, a.log, a.cfg).Initialize()
 
 	repository := data.NewMongoRegistryRepository(a.resources.Database)
 	coordinator := core.NewOrderCoordinator(a.log, repository, a.resources.Producer)

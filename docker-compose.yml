@@ -31,17 +31,6 @@ services:
       - mongodb-primary
       - kafka
 
-  mongodb:
-    image: mongo:5.0.3-focal
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=password
-    volumes:
-      - mongodb_data:/data/mongodb
-    ports:
-      - "27017:27017"
-    restart: always
-
   mongodb-primary:
     image: docker.io/bitnami/mongodb:5.0.5
     environment:

@@ -7,15 +7,16 @@ import (
 	"eCommerce/registry/internal/models"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
+	"net/http"
+	"time"
+
 	"github.com/segmentio/kafka-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
-	"io/ioutil"
-	"net/http"
-	"time"
 )
 
 type RegistryController interface {
@@ -183,6 +184,7 @@ func Identity(r *http.Request) (*models.Identity, error) {
 		return identity, nil
 	}
 
+	// А можешь пояснить, зачем столько вариантов?
 	return nil, errors.New(`no identity`)
 }
 

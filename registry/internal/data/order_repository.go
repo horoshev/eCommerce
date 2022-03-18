@@ -3,18 +3,19 @@ package data
 import (
 	"context"
 	"eCommerce/registry/internal/models"
+	"time"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"time"
 )
 
 type RegistryRepository interface {
 	FindOrderId(id primitive.ObjectID) (*models.Order, error)
 	UpdateOrder(id primitive.ObjectID, updates []bson.E) (*models.Order, error)
 	UpdateOrderStatus(id primitive.ObjectID, status models.OrderStatus) (*models.Order, error)
-	Commit() error
+	Commit() error // Искал, куда ты хотел вставить этот метод, но не нашёл в коде)
 }
 
 type MongoRegistryRepository struct {

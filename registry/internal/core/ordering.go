@@ -5,13 +5,14 @@ import (
 	"eCommerce/registry/internal/api/requests"
 	"eCommerce/registry/internal/models"
 	"errors"
+	"time"
+
 	"github.com/segmentio/kafka-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.uber.org/zap"
-	"time"
 )
 
 type PurchaseController interface {
@@ -46,7 +47,7 @@ func (p *Purchaser) Order(userId primitive.ObjectID, r *requests.OrderRequest) (
 	order := new(models.Order)
 	order.UserId = userId
 	order.Status = models.OrderPending
-	order.Timestamp = time.Now().UTC()
+	order.Timestamp = time.Now().UTC() // Здесь есть некоторая проблема. Можешь порассуждать?
 	order.Items = r.Items
 	order.Updates = []models.OrderUpdate{
 		{
